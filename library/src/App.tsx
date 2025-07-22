@@ -1,19 +1,16 @@
+import "./App.css";
+import { Navbar } from "./layouts/NavbarAndFooter/Navbar";
+import { HomePage } from "./layouts/HomePage/HomePage";
+import { Footer } from "./layouts/NavbarAndFooter/Footer";
 
-import './App.css'
-import { Navbar } from './layouts/NavbarAndFooter/Navbar'
-import { ExploreTopBooks } from './layouts/HomePage/ExploreTopBooks'
-import { Carousel } from './layouts/HomePage/Carousel'
-
-function App() {
-  
-
+export const App = () => {
   return (
     <div>
-        <Navbar/>
-        <ExploreTopBooks/>
-        <Carousel/>
+      <Navbar />
+        <HomePage />
+      <Footer />
     </div>
-  )
+  );
 }
 
-export default App
+
