@@ -1,3 +1,4 @@
+import { NavLink, Link } from "react-router"
 export const Navbar = () =>{
     return(
         <nav className='navbar navbar-expand-lg navbar-dark main-color py-2'>
@@ -14,11 +15,11 @@ export const Navbar = () =>{
               <ul className='navbar-nav'>
 
                   <li className='nav-item'>
-                      <a className='nav-link' href='#'>Home</a>
+                      <NavLink className='nav-link' to='/'>Home</NavLink>
                   </li>
 
                   <li className='nav-item'>
-                      <a className='nav-link' href='#'>Search Books</a>
+                      <NavLink className='nav-link' to='/search'>Search Books</NavLink>
                   </li>
                   
               </ul>

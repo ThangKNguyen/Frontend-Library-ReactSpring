@@ -1,52 +1,44 @@
-export const Pagination: React.FC <{currentPage: number, totalPages: number, paginate: any}> = (props) => {
-    
-    const pageNumbers = [];
-    
-    //trying to find out what numbers we need to show in the pagination
-    if(props.currentPage===1){
-        pageNumbers.push(props.currentPage);
-        if(props.totalPages>=props.currentPage+1){
-            pageNumbers.push(props.currentPage+1);
-        }
-        if(props.totalPages>=props.currentPage+2){
-            pageNumbers.push(props.currentPage+2);
-        }
-    } else if(props.currentPage>1){
-        if (props.currentPage >=3){
-            pageNumbers.push(props.currentPage-2);
-            pageNumbers
-        } else{
-            pageNumbers.push(props.currentPage-1);
-        }
-        pageNumbers.push(props.currentPage);
-        
-        if(props.totalPages>=props.currentPage+1){
-            pageNumbers.push(props.currentPage+1);
-        }
-        if(props.totalPages>=props.currentPage+2){
-            pageNumbers.push(props.currentPage+2);
-        }
-    }
+export const Pagination: React.FC<{ 
+  currentPage: number, 
+  totalPages: number, 
+  paginate: (page: number) => void 
+}> = ({ currentPage, totalPages, paginate }) => {
 
-    return(
-        <nav aria-label="...">
-            <ul className="pagination">
-                <li className="page-item" onClick={() => props.paginate(1)}>
-                    <button className="page-link">
-                        First Page
-                    </button>
-                </li>
-                {pageNumbers.map((number) => (
-                    <li key={number} className={'page-item' + (props.currentPage === number ? ' active' : '')} onClick={() => props.paginate(number)}>
-                       <button className="page-link">{number}</button>
-                    </li>
-                ))}
-                <li className="page-item" onClick={() => props.paginate(props.totalPages)}>
-                    <button className="page-link">
-                        Last Page
-                    </button>
-                </li>
-            </ul>
-        </nav>
-    )
-}
+  const pageNumbers: number[] = [];
+
+  // Always show the current page and up to 2 pages before/after
+  const startPage = Math.max(1, currentPage - 2);
+  const endPage = Math.min(totalPages, currentPage + 2);
+
+  for (let i = startPage; i <= endPage; i++) {
+    pageNumbers.push(i);
+  }
+
+  return (
+    <nav aria-label="Page navigation">
+      <ul className="pagination">
+        
+        {/* First Page Button */}
+        <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`} 
+            onClick={() => paginate(1)}>
+          <button className="page-link">First Page</button>
+        </li>
+
+        {/* Page Numbers */}
+        {pageNumbers.map((number) => (
+          <li key={number} 
+              className={`page-item ${currentPage === number ? 'active' : ''}`} 
+              onClick={() => paginate(number)}>
+            <button className="page-link">{number}</button>
+          </li>
+        ))}
+
+        {/* Last Page Button */}
+        <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`} 
+            onClick={() => paginate(totalPages)}>
+          <button className="page-link">Last Page</button>
+        </li>
+      </ul>
+    </nav>
+  );
+};
