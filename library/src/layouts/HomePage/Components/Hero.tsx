@@ -1,4 +1,10 @@
-export const Heroes = () => {
+import React from "react";
+import { useAuth0 } from "@auth0/auth0-react";
+import { Link } from "react-router-dom";
+
+export const Heroes: React.FC = () => {
+  const { isAuthenticated } = useAuth0();
+
   return (
     <div>
       <div className="d-none d-lg-block">
@@ -11,14 +17,20 @@ export const Heroes = () => {
             <div className="ml-2">
               <h1>What have you been reading?</h1>
               <p className="lead">
-                We would love to know what you've been reading. Whether it's a
-                classic or a modern classic, we'll love to hear about it.
-                Whether you're a fan of literature or a fan of science, we'd
-                love to hear about it.
+                The library team would love to know what you have been reading.
+                Whether it is to learn a new skill or grow within one,
+                we will be able to provide the top content for you!
               </p>
-              <a className="btn main-color btn-lg text-white" href="#">
-                Sign Up
-              </a>
+
+              {isAuthenticated ? (
+                <Link type="button" className="btn main-color btn-lg text-white" to="/search">
+                  Explore top books
+                </Link>
+              ) : (
+                <Link className="btn main-color btn-lg text-white" to="/login">
+                  Sign up
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -28,9 +40,10 @@ export const Heroes = () => {
             <div className="ml-2">
               <h1>Our collection is always changing!</h1>
               <p className="lead">
-                Try to check in daily as our collection is always changing! We
-                work nonstop to provide the most accurate book selection
-                possible for our readers.
+                Try to check in daily as our collection is always changing!
+                We work nonstop to provide the most accurate book selection possible
+                for our Luv 2 Read students! We are diligent about our book selection
+                and our books are always going to be our top priority.
               </p>
             </div>
           </div>
@@ -43,32 +56,39 @@ export const Heroes = () => {
 
       {/* Mobile */}
       <div className="d-lg-none">
-        <div className="container ">
+        <div className="container">
           <div className="m-2">
             <div className="col-image-left"></div>
             <div className="mt-2">
               <h1>What have you been reading?</h1>
               <p className="lead">
-                We would love to know what you've been reading. Whether it's a
-                classic or a modern classic, we'll love to hear about it.
-                Whether you're a fan of literature or a fan of science, we'd
-                love to hear about it.
+                The library team would love to know what you have been reading.
+                Whether it is to learn a new skill or grow within one,
+                we will be able to provide the top content for you!
               </p>
-              <a className="btn main-color btn-lg text-white" href="#">
-                Sign Up
-              </a>
+
+              {isAuthenticated ? (
+                <Link type="button" className="btn main-color btn-lg text-white" to="/search">
+                  Explore top books
+                </Link>
+              ) : (
+                <Link className="btn main-color btn-lg text-white" to="/login">
+                  Sign up
+                </Link>
+              )}
             </div>
           </div>
 
           <div className="m-2">
             <div className="col-image-right"></div>
             <div className="mt-2">
-                <h1>Our collection is always changing!</h1>
-                <p className="lead">
-                    Try to check in daily as our collection is always changing! We
-                    work nonstop to provide the most accurate book selection
-                    possible for our readers.
-                </p>
+              <h1>Our collection is always changing!</h1>
+              <p className="lead">
+                Try to check in daily as our collection is always changing!
+                We work nonstop to provide the most accurate book selection possible
+                for our Luv 2 Read students! We are diligent about our book selection
+                and our books are always going to be our top priority.
+              </p>
             </div>
           </div>
         </div>
@@ -76,3 +96,4 @@ export const Heroes = () => {
     </div>
   );
 };
+

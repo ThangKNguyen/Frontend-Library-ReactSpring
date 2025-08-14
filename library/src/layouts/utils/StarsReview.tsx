@@ -2,8 +2,11 @@ export const StarsReview: React.FC<{ rating: number; size: number }> = ({
   rating,
   size,
 }) => {
+  // Calculate how many full stars to display (e.g. 4.5 => 4 full stars)
   const fullStars = Math.floor(rating);
+  // Determine if a half star should be displayed (e.g. 4.5 => true)
   const hasHalfStar = rating % 1 >= 0.5;
+  // Calculate how many empty stars are needed to fill to 5 stars total
   const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
 
   return (
