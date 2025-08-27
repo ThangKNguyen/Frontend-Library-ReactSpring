@@ -14,8 +14,9 @@ import { BookCheckoutPage } from "./layouts/BookCheckOutPage/BookCheckOutPage";
 // import { ManageLibraryPage } from "./layouts/ManageLibraryPage/ManageLibraryPage";
 
 import LoginPage from "./Auth/LoginPage";
+import { SpinnerLoading } from "./layouts/utils/SpinnerLoading";
 
-import { Auth0Provider, withAuthenticationRequired } from "@auth0/auth0-react";
+import { Auth0Provider /*, withAuthenticationRequired*/ } from "@auth0/auth0-react";
 import { auth0Config } from "./lib/auth0Config";
 
 // Wrap Auth0 with v6 navigation
@@ -23,7 +24,8 @@ const Auth0ProviderWithRouter: React.FC<{ children: React.ReactNode }> = ({ chil
   const navigate = useNavigate();
 
   const onRedirectCallback = (appState?: { returnTo?: string }) => {
-    navigate(appState?.returnTo || "/home", { replace: true });
+    // land on the intended path or fallback to root
+    navigate(appState?.returnTo || "/", { replace: true });
   };
 
   return (
@@ -31,10 +33,12 @@ const Auth0ProviderWithRouter: React.FC<{ children: React.ReactNode }> = ({ chil
       domain={auth0Config.issuer}
       clientId={auth0Config.clientId}
       authorizationParams={{
-        redirect_uri: auth0Config.redirectUri,
-        audience: auth0Config.audience,
+        redirect_uri: auth0Config.redirectUri, // e.g., http://localhost:5173/callback
+        audience: auth0Config.audience,        // must match your API Identifier in Auth0
         scope: auth0Config.scope,
       }}
+      cacheLocation="localstorage"
+      useRefreshTokens
       onRedirectCallback={onRedirectCallback}
     >
       {children}
@@ -55,15 +59,18 @@ export const App: React.FC = () => {
 
         <div className="flex-grow-1">
           <Routes>
-            {/* Redirect / -> /home */}
-            <Route path="/" element={<Navigate to="/home" replace />} />
+            {/* Redirect /home -> / */}
+            <Route path="/home" element={<Navigate to="/" replace />} />
 
             {/* Public routes */}
-            <Route path="/home" element={<HomePage />} />
+            <Route path="/" element={<HomePage />} />
             <Route path="/search" element={<SearchBooksPage />} />
             {/* <Route path="/reviewlist/:bookId" element={<ReviewListPage />} /> */}
             <Route path="/checkout/:bookId" element={<BookCheckoutPage />} />
             <Route path="/login" element={<LoginPage />} />
+
+            {/* Auth0 callback landing (required since redirectUri ends with /callback) */}
+            <Route path="/callback" element={<SpinnerLoading />} />
 
             {/* Protected routes (same logic, updated syntax) */}
             {/* <Route path="/shelf" element={<ShelfPageProtected />} />
@@ -71,7 +78,7 @@ export const App: React.FC = () => {
             <Route path="/admin" element={<ManageLibraryPageProtected />} /> */}
 
             {/* Fallback (optional) */}
-            {/* <Route path="*" element={<Navigate to="/home" replace />} /> */}
+            {/* <Route path="*" element={<Navigate to="/" replace />} /> */}
           </Routes>
         </div>
 
@@ -80,4 +87,5 @@ export const App: React.FC = () => {
     </div>
   );
 };
+
 

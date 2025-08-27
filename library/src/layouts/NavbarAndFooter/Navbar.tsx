@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import { SpinnerLoading } from "../utils/SpinnerLoading";
 
@@ -7,18 +7,41 @@ export const Navbar: React.FC = () => {
   const [roles, setRoles] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const { isAuthenticated, loginWithRedirect, logout, getIdTokenClaims } = useAuth0();
+  const { isAuthenticated, loginWithRedirect, logout, getIdTokenClaims, getAccessTokenSilently } =
+    useAuth0();
 
   useEffect(() => {
-    const fetchRoles = async () => {
-      const claims = await getIdTokenClaims();
-      const fetchedRoles =
-        (claims && (claims as any)["https://luv2code-react-library.com/roles"]) || [];
-      setRoles(fetchedRoles);
+    if (!isAuthenticated) {
       setLoading(false);
+      return;
+    }
+
+    const fetchRoles = async () => {
+      try {
+        const claims = await getIdTokenClaims();
+        const fetchedRoles =
+          (claims && (claims as any)["https://luv2code-react-library.com/roles"]) || [];
+        setRoles(fetchedRoles);
+
+        // ✅ print out useful info
+        console.log("ID Token Claims:", claims);
+        if (claims) {
+          console.log("User ID (sub):", (claims as any).sub);
+          console.log("User Email:", (claims as any).email);
+        }
+
+        // Try fetching an access token for API calls
+        const accessToken = await getAccessTokenSilently();
+        console.log("Access Token:", accessToken);
+      } catch (err) {
+        console.error("Error fetching access token:", err);
+      } finally {
+        setLoading(false);
+      }
     };
+
     fetchRoles();
-  }, [isAuthenticated, getIdTokenClaims]);
+  }, [isAuthenticated, getIdTokenClaims, getAccessTokenSilently]);
 
   if (loading) return <SpinnerLoading />;
 
@@ -28,8 +51,6 @@ export const Navbar: React.FC = () => {
 
   const handleLogin = () => {
     loginWithRedirect();
-    // keep same behavior as your legacy snippet
-    window.location.assign("/");
   };
 
   return (
@@ -63,13 +84,13 @@ export const Navbar: React.FC = () => {
               </NavLink>
             </li>
 
-            {isAuthenticated && (
+            {/* {isAuthenticated && (
               <li className="nav-item">
                 <NavLink className="nav-link" to="/shelf">
                   Shelf
                 </NavLink>
               </li>
-            )}
+            )} */}
 
             {isAuthenticated && roles?.includes("admin") && (
               <li className="nav-item">
@@ -100,3 +121,6 @@ export const Navbar: React.FC = () => {
     </nav>
   );
 };
+
+
+

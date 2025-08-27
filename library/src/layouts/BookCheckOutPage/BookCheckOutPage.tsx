@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import { useAuth0 } from "@auth0/auth0-react";
 
 import BookModel from "../../models/BookModel";
 import ReviewModel from "../../models/ReviewModel";
@@ -12,6 +13,8 @@ import { LatestReviews } from "./LatestReviews";
 import bookImage from "../../Images/BooksImages/book-luv2code-1000.png";
 
 export const BookCheckoutPage = () => {
+  const { isAuthenticated, user, getAccessTokenSilently, loginWithRedirect, logout } = useAuth0();
+
   const { bookId } = useParams();
 
   const [book, setBook] = useState<BookModel>();
@@ -23,6 +26,15 @@ export const BookCheckoutPage = () => {
   const [totalStars, setTotalStars] = useState(0);
   const [isLoadingReview, setIsLoadingReview] = useState(true);
 
+  //Loans count state
+  const [currentLoansCount, setCurrentLoansCount] = useState(0);
+  const [isLoadingLoansCount, setIsLoadingLoansCount] = useState(true);
+
+  //isBookCheck out?
+  const [isBookCheckedOut, setIsBookCheckedOut] = useState(false);
+  const [isLoadingCheckedOut, setIsLoadingCheckedOut] = useState(true);
+
+  //fetch books
   useEffect(() => {
     const fetchBook = async () => {
       try {
@@ -52,8 +64,9 @@ export const BookCheckoutPage = () => {
     };
 
     fetchBook();
-  }, [bookId]);
+  }, [bookId, isBookCheckedOut]);
 
+  //fetch reviews
   useEffect(() => {
     const fetchBookReviews = async () => {
       try {
@@ -102,7 +115,101 @@ export const BookCheckoutPage = () => {
     fetchBookReviews();
   }, [bookId]);
 
-  if (isLoading || isLoadingReview) {
+  //fetch loans
+useEffect(() => {
+  let isMounted = true;
+
+  const fetchLoansCount = async () => {
+    try {
+      if (!isAuthenticated) {
+        if (isMounted) setIsLoadingLoansCount(false);
+        return;
+      }
+
+      // Get a JWT from Auth0 (works if you configured audience on the provider;
+      // if not, add { authorizationParams: { audience: "<your API audience>" } } )
+      const accessToken = await getAccessTokenSilently();
+
+      const res = await fetch(
+        "http://localhost:8080/api/books/secure/currentloans/count",
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      if (!res.ok) throw new Error("Failed to fetch current loans count.");
+
+      // Backend returns a bare number (int)
+      const count: number = await res.json();
+
+      if (isMounted) {
+        setCurrentLoansCount(count);
+      }
+    } catch (err: any) {
+      if (isMounted) setHttpError(err.message ?? "Error fetching loans count.");
+    } finally {
+      if (isMounted) setIsLoadingLoansCount(false);
+    }
+  };
+
+  fetchLoansCount();
+
+  return () => {
+    isMounted = false;
+  };
+}, [isAuthenticated, getAccessTokenSilently, isBookCheckedOut]);
+
+//isbookcheckout useeffect
+useEffect(() => {
+  const controller = new AbortController();
+  const signal = controller.signal;
+
+  const fetchIsBookCheckedOut = async () => {
+    try {
+      if (!isAuthenticated || !bookId) {
+        setIsLoadingCheckedOut(false);
+        return;
+      }
+
+      const accessToken = await getAccessTokenSilently();
+
+      const res = await fetch(
+        `http://localhost:8080/api/books/secure/ischeckedout/byuser?bookId=${bookId}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          signal,  // ✅ link request to AbortController
+        }
+      );
+
+      if (!res.ok) throw new Error("Failed to fetch checked-out status.");
+
+      const checked: boolean = await res.json();
+      setIsBookCheckedOut(checked);
+    } catch (err: any) {
+      if (err.name !== "AbortError") {
+        setHttpError(err.message ?? "Error fetching checked-out status.");
+      }
+    } finally {
+      setIsLoadingCheckedOut(false);
+    }
+  };
+
+  fetchIsBookCheckedOut();
+
+  return () => {
+    controller.abort(); // ✅ cancel fetch if component unmounts
+  };
+}, [isAuthenticated, bookId, getAccessTokenSilently]);
+
+
+
+  if (isLoading || isLoadingReview || isLoadingLoansCount || isLoadingCheckedOut) {
     return <SpinnerLoading />;
   }
 
@@ -112,6 +219,35 @@ export const BookCheckoutPage = () => {
         <p>{httpError}</p>
       </div>
     );
+  }
+
+  //check out button
+  const checkOutBook = async () => {
+    try {
+      if (!isAuthenticated || !bookId) {
+        return;
+      }
+
+      const accessToken = await getAccessTokenSilently();
+
+      const res = await fetch(
+        `http://localhost:8080/api/books/secure/checkout?bookId=${bookId}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const response = await res.json();
+
+      setIsBookCheckedOut(true);
+
+    } catch (err: any) {
+      setHttpError(err.message ?? "Error checking out book.");
+    }
   }
 
   return (
@@ -136,7 +272,8 @@ export const BookCheckoutPage = () => {
             </div>
           </div>
 
-          <CheckoutAndReview book={book} mobile={false} />
+          <CheckoutAndReview book={book} mobile={false} currentLoansCount={currentLoansCount} isAuthentication={isAuthenticated} isCheckout={isBookCheckedOut} 
+          onCheckout={checkOutBook}/>
           <hr />
           <LatestReviews reviews={reviews} bookId={book?.id} mobile={false} />
         </div>
@@ -161,7 +298,7 @@ export const BookCheckoutPage = () => {
           </div>
         </div>
 
-        <CheckoutAndReview book={book} mobile={true} />
+        <CheckoutAndReview book={book} mobile={true} currentLoansCount={currentLoansCount} isAuthentication={isAuthenticated} isCheckout={isBookCheckedOut} onCheckout={checkOutBook}/>
         <hr />
         <LatestReviews reviews={reviews} bookId={book?.id} mobile={true} />
       </div>
