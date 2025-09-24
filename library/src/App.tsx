@@ -8,6 +8,7 @@ import { Footer } from "./layouts/NavbarAndFooter/Footer";
 import { HomePage } from "./layouts/HomePage/HomePage";
 import { SearchBooksPage } from "./layouts/SearchBooksPage/SearchBooksPage";
 import { BookCheckoutPage } from "./layouts/BookCheckOutPage/BookCheckOutPage";
+import { ReviewListPage } from "./layouts/BookCheckOutPage/ReviewListPage/ReviewListPage";
 // import { ReviewListPage } from "./layouts/BookCheckoutPage/ReviewListPage/ReviewListPage";
 // import { ShelfPage } from "./layouts/ShelfPage/ShelfPage";
 // import { MessagesPage } from "./layouts/MessagesPage/MessagesPage";
@@ -68,6 +69,7 @@ export const App: React.FC = () => {
             {/* <Route path="/reviewlist/:bookId" element={<ReviewListPage />} /> */}
             <Route path="/checkout/:bookId" element={<BookCheckoutPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/reviewlist/:bookId" element={<ReviewListPage />} />
 
             {/* Auth0 callback landing (required since redirectUri ends with /callback) */}
             <Route path="/callback" element={<SpinnerLoading />} />

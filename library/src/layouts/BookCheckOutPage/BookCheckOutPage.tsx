@@ -9,6 +9,7 @@ import { SpinnerLoading } from "../utils/SpinnerLoading";
 import { StarsReview } from "../utils/StarsReview";
 import { CheckoutAndReview } from "./CheckoutAndReview";
 import { LatestReviews } from "./LatestReviews";
+import ReviewRequestModel from "../../models/ReviewRequestModel";
 
 import bookImage from "../../Images/BooksImages/book-luv2code-1000.png";
 
@@ -26,6 +27,10 @@ export const BookCheckoutPage = () => {
   const [totalStars, setTotalStars] = useState(0);
   const [isLoadingReview, setIsLoadingReview] = useState(true);
 
+  //has user left review on this specific book
+  const[isReviewLeft, setIsReviewLeft] = useState(false);
+  const [isLoadingUserReview, setIsLoadingUserReview] = useState(true);
+
   //Loans count state
   const [currentLoansCount, setCurrentLoansCount] = useState(0);
   const [isLoadingLoansCount, setIsLoadingLoansCount] = useState(true);
@@ -33,9 +38,10 @@ export const BookCheckoutPage = () => {
   //isBookCheck out?
   const [isBookCheckedOut, setIsBookCheckedOut] = useState(false);
   const [isLoadingCheckedOut, setIsLoadingCheckedOut] = useState(true);
+  
 
   //fetch books
-  useEffect(() => {
+useEffect(() => {
     const fetchBook = async () => {
       try {
         const url = `http://localhost:8080/api/books/${bookId}`;
@@ -113,7 +119,53 @@ export const BookCheckoutPage = () => {
     };
 
     fetchBookReviews();
-  }, [bookId]);
+  }, [bookId, isReviewLeft]);
+
+  //fetch user review left
+useEffect(() => {
+  const controller = new AbortController();
+  const signal = controller.signal;
+
+  const fetchUserReview = async () => {
+    try {
+      if (!isAuthenticated || !bookId) {
+        setIsLoadingUserReview(false);
+        return;
+      }
+
+      const accessToken = await getAccessTokenSilently();
+
+      const res = await fetch(
+        `http://localhost:8080/api/reviews/secure/user/book?bookId=${bookId}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          signal,
+        }
+      );
+
+      if (!res.ok) throw new Error("Failed to fetch user review status.");
+
+      const hasReview: boolean = await res.json();
+      setIsReviewLeft(hasReview);
+    } catch (err: any) {
+      if (err.name !== "AbortError") {
+        setHttpError(err.message ?? "Error fetching user review status.");
+      }
+    } finally {
+      setIsLoadingUserReview(false);
+    }
+  };
+
+  fetchUserReview();
+  console.log(isReviewLeft)
+
+  return () => {
+    controller.abort();
+  };
+}, [isAuthenticated, bookId]);
 
   //fetch loans
 useEffect(() => {
@@ -160,7 +212,7 @@ useEffect(() => {
   return () => {
     isMounted = false;
   };
-}, [isAuthenticated, getAccessTokenSilently, isBookCheckedOut]);
+}, [isAuthenticated, isBookCheckedOut]);
 
 //isbookcheckout useeffect
 useEffect(() => {
@@ -205,11 +257,51 @@ useEffect(() => {
   return () => {
     controller.abort(); // ✅ cancel fetch if component unmounts
   };
-}, [isAuthenticated, bookId, getAccessTokenSilently]);
+}, [isAuthenticated, bookId]);
+
+//submit review
+// Function to submit a review for the current book
+async function submitReview(stars: number, reviewDescription: string) {
+  let bookId: number = 0;
+
+  // ✅ Make sure the book has an ID before submitting
+  if (book?.id) {
+    bookId = book.id;
+  }
+
+  // ✅ Build the request model (matches backend ReviewRequest)
+  const reviewRequestModel = new ReviewRequestModel(bookId, reviewDescription, stars);
+
+  // ✅ Backend endpoint for posting reviews (secured)
+  const url = 'http://localhost:8080/api/reviews/secure';
+
+  // ✅ Get JWT access token from Auth0 (for authorization)
+  const accessToken = await getAccessTokenSilently();
+
+  // ✅ Configure the POST request with headers and body
+  const requestOptions = {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`, // include auth token
+      'Content-Type': 'application/json' // sending JSON body
+    },
+    body: JSON.stringify(reviewRequestModel) // review data to send
+  };
+
+  // ✅ Send the request to the backend
+  const returnResponse = await fetch(url, requestOptions);
+
+  // ✅ Throw an error if backend didn’t accept the request
+  if (!returnResponse.ok) {
+    throw new Error('Something went wrong!');
+  }
+
+  // ✅ Update state → user has now left a review
+  setIsReviewLeft(true);
+}
 
 
-
-  if (isLoading || isLoadingReview || isLoadingLoansCount || isLoadingCheckedOut) {
+  if (isLoading || isLoadingReview || isLoadingLoansCount || isLoadingCheckedOut || isLoadingUserReview) {
     return <SpinnerLoading />;
   }
 
@@ -272,8 +364,8 @@ useEffect(() => {
             </div>
           </div>
 
-          <CheckoutAndReview book={book} mobile={false} currentLoansCount={currentLoansCount} isAuthentication={isAuthenticated} isCheckout={isBookCheckedOut} 
-          onCheckout={checkOutBook}/>
+          <CheckoutAndReview submitReview={submitReview} book={book} mobile={false} currentLoansCount={currentLoansCount} isAuthentication={isAuthenticated} isCheckout={isBookCheckedOut} 
+          onCheckout={checkOutBook} isReviewLeft={isReviewLeft}/>
           <hr />
           <LatestReviews reviews={reviews} bookId={book?.id} mobile={false} />
         </div>
@@ -298,7 +390,8 @@ useEffect(() => {
           </div>
         </div>
 
-        <CheckoutAndReview book={book} mobile={true} currentLoansCount={currentLoansCount} isAuthentication={isAuthenticated} isCheckout={isBookCheckedOut} onCheckout={checkOutBook}/>
+        <CheckoutAndReview submitReview={submitReview} book={book} mobile={true} currentLoansCount={currentLoansCount} isAuthentication={isAuthenticated} isCheckout={isBookCheckedOut} onCheckout={checkOutBook}
+        isReviewLeft={isReviewLeft}/>
         <hr />
         <LatestReviews reviews={reviews} bookId={book?.id} mobile={true} />
       </div>
